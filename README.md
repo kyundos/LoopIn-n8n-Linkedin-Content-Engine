@@ -25,13 +25,13 @@ The system is divided into two interconnected workflows:
    - Collects the latest articles from 5 RSS feeds.
    - Filters news via Regex (Specific keywords + 24h window) and selects a maximum of 3 articles.
    - Passes the content to **Claude (Anthropic)** with a specific prompt to generate a LinkedIn post (without Markdown).
-   - Saves the post as a draft in `.md` format on **GitHub**.
+   - Saves the post as a backup in `.md` format on **GitHub**.
    - Sends a notification to **Telegram** with the draft and two inline buttons: ✅ _Approve_ or ❌ _Reject_.
 
 2. **Listener & Publisher (Webhook):**
    - Listens for the Webhook from Telegram.
-   - If the user clicks **Reject**: Deletes the draft from GitHub and updates the Telegram message.
-   - If the user clicks **Approve**: Sends the JSON payload to the LinkedIn `ugcPosts` API endpoint, publishes the post, and updates the Telegram message with the confirmation.
+   - If the user clicks **Reject**: The workflow stops and updates the Telegram message, indicating the draft has been ignored.
+   - If the user clicks **Approve**: Sends the JSON payload to the LinkedIn `ugcPosts` API endpoint, publishes the post, and updates the Telegram message confirming the publication.
 
 ---
 
@@ -70,7 +70,7 @@ In this phase, we will start n8n locally. Since Telegram needs to contact our sy
 1. **Clone the repository and prepare the environment:**
 
    ```bash
-   git clone [https://github.com/YOUR-USER/LoopIn-n8n-Linkedin-Content-Engine.git](https://github.com/YOUR-USER/LoopIn-n8n-Linkedin-Content-Engine.git)
+   git clone [https://github.com/kyundos/LoopIn-n8n-Linkedin-Content-Engine.git](https://github.com/YOUR-USER/LoopIn-n8n-Linkedin-Content-Engine.git)
    cd LoopIn-n8n-Linkedin-Content-Engine
    cp .env.example .env
    ```
@@ -127,14 +127,18 @@ Once the system is tested, it's time to deploy it to production on a VPS or NAS 
 
 <a name="importing"></a>
 
-## 📥 Importing Workflows in n8n
+## 📥 Importing and Setting Up Workflows in n8n
 
 1. Access the n8n UI.
 2. Go to **Workflows > Add Workflow**.
 3. Click the three dots in the top right corner and select **Import from File**.
-4. Import `workflows/1-Content-Generator.json` first and configure it (insert your RSS feeds).
-5. Import `workflows/2-Listener-Publisher.json`.
-6. **Important:** In both workflows, open the nodes (Telegram, Anthropic, GitHub, LinkedIn) and create/select the credentials from the n8n **Credential Manager**.
-7. Enable (_Activate_) the workflows using the toggle in the top right corner.
+4. Import the `workflows/1-Content-Generator.json` file first.
+5. Import the `workflows/2-Listener-Publisher.json` file.
+6. 🔑 **Configure Credentials (Mandatory):** In both workflows, open the nodes that require external access (Telegram, Anthropic, GitHub, LinkedIn). Click on the _Credentials_ dropdown and create the connections using the tokens listed in the [Prerequisites](#prerequisites).
+7. 📰 **Customize Sources and Filters:**
+   - Open the **"Code in JavaScript"** node in workflow 1 to replace the default URLs with your industry's RSS feeds.
+   - Open the **"Filter"** node to tweak the Regex and insert keywords relevant to your niche, filtering out irrelevant news.
+8. ✍️ **Prompt and Language Tuning:** By default, the AI is instructed to write posts in _English_. Open the **"Message a model"** (Anthropic) node in the first workflow to translate the prompt into your native language or adjust the tone of voice and role (e.g., from Software Engineer to Marketing Manager).
+9. Enable (_Activate_) the workflows using the toggle in the top right corner.
 
 **Done!** Your automated LinkedIn content engine is ready to run.
